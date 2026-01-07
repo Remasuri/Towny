@@ -3159,12 +3159,29 @@ public class TownySettings {
 	}
 
 	public static double getTownBankCap(Town town) {
-		return town.getTownLevel().bankCapModifier * getTownBankCap(); 
+		double cap = getTownBankCap();
+		if (!isTownBankCapPlotBased())
+			return town.getTownLevel().bankCapModifier * cap;
+
+		double multiplier = isPlotBasedTownBankCapUsingTownLevelModifier() ? town.getTownLevel().bankCapModifier : 1;
+		return Math.max(cap * town.getNumTownBlocks() * multiplier, getPlotBasedTownBankCapMinimumAmount());
 	}
 
 	public static double getTownBankCap() {
 
 		return getDouble(ConfigNodes.ECO_BANK_CAP_TOWN);
+	}
+
+	public static boolean isTownBankCapPlotBased() {
+		return getBoolean(ConfigNodes.ECO_BANK_CAP_PLOT_BASED);
+	}
+
+	public static double getPlotBasedTownBankCapMinimumAmount() {
+		return getDouble(ConfigNodes.ECO_BANK_CAP_PLOT_BASED_MIN_AMOUNT);
+	}
+
+	public static boolean isPlotBasedTownBankCapUsingTownLevelModifier() {
+		return getBoolean(ConfigNodes.ECO_BANK_CAP_PLOT_BASED_USES_TOWN_LEVEL_MODIFIER);
 	}
 
 	public static int getTownMinDeposit() {

@@ -832,9 +832,9 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.SWITCH) ? "true" : "false";
 			case "player_location_mobs": // %townyadvanced_player_location_mobs%
 				return townblock != null ? (townblock.getPermissions().mobs ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).hasWildernessMobs() ? "true" : "false");
-			case "player_location_explosion": // %townyadvanced_player_location_mobs%
+			case "player_location_explosion": // %townyadvanced_player_location_explosion%
 				return townblock != null ? (townblock.getPermissions().explosion ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).isExpl() ? "true" : "false");
-			case "player_location_firespread": // %townyadvanced_player_location_mobs%
+			case "player_location_firespread": // %townyadvanced_player_location_fire%
 				return townblock != null ? (townblock.getPermissions().fire ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).isFire() ? "true" : "false");
 			case "player_location_town_prefix": // %townyadvanced_player_location_town_prefix%
 				return townblock != null ? townblock.getTownOrNull().getPrefix(): "";

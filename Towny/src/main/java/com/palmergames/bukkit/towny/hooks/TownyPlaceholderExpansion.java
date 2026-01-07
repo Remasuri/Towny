@@ -1,15 +1,18 @@
 package com.palmergames.bukkit.towny.hooks;
 
 import com.palmergames.bukkit.towny.object.TownBlock;
+import com.palmergames.bukkit.towny.object.TownyPermission;
 import com.palmergames.bukkit.towny.object.Translation;
 import com.palmergames.bukkit.towny.object.comparators.ComparatorCaches;
 import com.palmergames.bukkit.towny.object.comparators.ComparatorType;
 import com.palmergames.bukkit.towny.object.Translatable;
 import com.palmergames.bukkit.towny.utils.CombatUtil;
 
+import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
 import com.palmergames.util.Pair;
 import com.palmergames.util.TimeMgmt;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -45,7 +48,7 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 	final String res = TownySettings.getPAPIFormattingResident() + Translation.of("res_sing");
 	final String mayor = TownySettings.getPAPIFormattingMayor() + Translation.of("mayor_sing");
 	final String king = TownySettings.getPAPIFormattingKing() + Translation.of("king_sing");
-	
+
 	private final Towny plugin;
 
 	/**
@@ -84,7 +87,7 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 	/**
 	 * The name of the person who created this expansion should go here. <br>
 	 * For convienience do we return the author from the plugin.yml
-	 * 
+	 *
 	 * @return The name of the author as a String.
 	 */
 	@Override
@@ -117,7 +120,7 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 	public String getVersion() {
 		return plugin.getDescription().getVersion();
 	}
-	
+
 	@Override
 	public String onPlaceholderRequest(Player player, Player player2, String identifier) {
 		return ChatColor.translateAlternateColorCodes('&', getRelationalPlaceholder(player, player2, identifier));
@@ -131,8 +134,8 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 		Resident res2 = TownyUniverse.getInstance().getResident(player2.getUniqueId());
 		if (res == null || res2 == null)
 			return TownySettings.getPAPIRelationNone();
-		
-		if (!res2.hasTown()) 
+
+		if (!res2.hasTown())
 			return TownySettings.getPAPIRelationNoTown();
 		else if (CombatUtil.isSameTown(res, res2))
 			return TownySettings.getPAPIRelationSameTown();
@@ -166,19 +169,19 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 		if (player == null && !identifier.startsWith("top_")) {
 			return "";
 		}
-		
+
 		if (identifier.startsWith("top_"))
 			return getLeaderBoardPlaceholder(identifier);
-		
+
 		/*
 		 * This is a location-based placeholder request, use the onPlaceholderRequest to fulfill it.
 		 * %townyadvanced_player_status% is a special case and should probably be renamed to %townyadvanced_resident_status%.
 		 */
 		if (player.isOnline() && (identifier.startsWith("player_") && !identifier.equals("player_status")))
 			return onPlaceholderRequest((Player) player, identifier);
-		
+
 		Resident resident = TownyUniverse.getInstance().getResident(player.getUniqueId());
-		
+
 		if (resident == null)
 			return "";
 
@@ -195,540 +198,540 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 		boolean percentage = false;
 
 		switch (identifier) {
-		case "town": // %townyadvanced_town%
-			if (resident.hasTown())
-				town = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getName());
-			return StringMgmt.remUnderscore(town);
-		case "town_unformatted": // %townyadvanced_town_unformatted%
-			if (resident.hasTown())
-				town = resident.getTownOrNull().getName();
-			return town;
-		case "town_formatted": // %townyadvanced_town_formatted%
-			if (resident.hasTown())
-				town = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getFormattedName());
-			return StringMgmt.remUnderscore(town);
-		case "town_formatted_with_town_minimessage_colour": // %townyadvanced_town_formatted_with_town_minimessage_colour%
-			if (resident.hasTown()) {
-				Town residentTown = resident.getTownOrNull();
-				String townHexValue = residentTown.getMapColorHexCode();
-				if (townHexValue != null)
-					town = String.format(TownySettings.getPAPIFormattingTown(), "<#"+townHexValue+">" + residentTown.getFormattedName());
-			}
-			return StringMgmt.remUnderscore(town);
-		case "nation": // %townyadvanced_nation%
-			if (resident.hasNation())
-				nation = String.format(TownySettings.getPAPIFormattingNation(), resident.getNationOrNull().getName());
-			return StringMgmt.remUnderscore(nation);
-		case "nation_unformatted": // %townyadvanced_nation_unformatted%
-			if (resident.hasNation())
-				nation = resident.getNationOrNull().getName();
-			return StringMgmt.remUnderscore(nation);
-		case "nation_formatted": // %townyadvanced_nation_formatted%
-			if (resident.hasNation())
-				nation = String.format(TownySettings.getPAPIFormattingNation(), resident.getNationOrNull().getFormattedName());
-			return StringMgmt.remUnderscore(nation);
-		case "nation_formatted_with_nation_minimessage_colour": // %townyadvanced_nation_formatted_with_nation_minimessage_colour%
-			if (resident.hasNation()) {
-				Nation residentNation = resident.getNationOrNull();
-				String nationHexValue = residentNation.getMapColorHexCode();
-				if (nationHexValue != null)
-					nation = String.format(TownySettings.getPAPIFormattingNation(), "<#"+nationHexValue+">" + residentNation.getFormattedName());
-			}
-			return StringMgmt.remUnderscore(nation);
-		case "town_balance": // %townyadvanced_town_balance%
-			if (resident.hasTown() && TownyEconomyHandler.isActive())
-				balance = getMoney(resident.getTownOrNull().getAccount().getCachedBalance());
-			return balance;
-        case "town_balance_unformatted": // %townyadvanced_town_balance_unformatted%
-			if (resident.hasTown() && TownyEconomyHandler.isActive())
-				balance = String.valueOf(resident.getTownOrNull().getAccount().getCachedBalance());
-            return balance;
-		case "nation_balance": // %townyadvanced_nation_balance%
-			if (resident.hasNation() && TownyEconomyHandler.isActive())
-				balance = getMoney(resident.getTownOrNull().getNationOrNull().getAccount().getCachedBalance());
-			return balance;
-        case "nation_balance_unformatted": // %townyadvanced_nation_balance_unformatted%
-			if (resident.hasNation() && TownyEconomyHandler.isActive())
-				balance = String.valueOf(resident.getTownOrNull().getNationOrNull().getAccount().getCachedBalance());
-            return balance;
-		case "town_tag": // %townyadvanced_town_tag%
-			if (resident.hasTown())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getTag());
-			return tag;
-		case "town_tag_override": // %townyadvanced_town_tag_override%
-			if (resident.hasTown()) {
-				if (resident.getTownOrNull().hasTag())
-					tag = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getTag());
-				else
-					tag = StringMgmt.remUnderscore(String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getName()));
-			}
-			return tag;
-		case "town_tag_unformatted": // %townyadvanced_town_tag_unformatted%
-			if (resident.hasTown())
-				tag = resident.getTownOrNull().getTag();
-			return tag;
-		case "town_tag_override_unformatted": // %townyadvanced_town_tag_override_unformatted%
-			if (resident.hasTown()) {
-				if (resident.getTownOrNull().hasTag())
-					tag = resident.getTownOrNull().getTag();
-				else
-					tag = StringMgmt.remUnderscore(resident.getTownOrNull().getName());
-			}
-			return tag;
-		case "nation_tag": // %townyadvanced_nation_tag%
-			if (resident.hasNation())
-				tag = String.format(TownySettings.getPAPIFormattingNation(), resident.getNationOrNull().getTag());
-			return tag;
-		case "nation_tag_override": // %townyadvanced_nation_tag_override%
-			if (resident.hasNation()) {
-				if (resident.getNationOrNull().hasTag())
-					tag = String.format(TownySettings.getPAPIFormattingNation(),
-							resident.getNationOrNull().getTag());
-				else
-					tag = StringMgmt.remUnderscore(String.format(TownySettings.getPAPIFormattingNation(),
-							resident.getNationOrNull().getName()));
-			}
-			return tag;
-		case "nation_tag_unformatted": // %townyadvanced_nation_tag_unformatted%
-			if (resident.hasNation())
-				tag = resident.getNationOrNull().getTag();
-			return tag;
-		case "nation_tag_override_unformatted": // %townyadvanced_nation_tag_override_unformatted%
-			if (resident.hasNation()) {
-				if (resident.getNationOrNull().hasTag())
-					tag = resident.getNationOrNull().getTag();
-				else
-					tag = StringMgmt.remUnderscore(resident.getNationOrNull().getName());
-			}
-			return tag;
-		case "towny_tag": // %townyadvanced_towny_tag%
-			if (resident.hasTown()) {
-				if (resident.getTownOrNull().hasTag())
-					town = resident.getTownOrNull().getTag();
-				if (resident.hasNation() && resident.getNationOrNull().hasTag())
-					nation = resident.getNationOrNull().getTag();
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "towny_formatted": // %townyadvanced_towny_formatted%
-			if (resident.hasTown()) {
-				town = resident.getTownOrNull().getFormattedName();
+			case "town": // %townyadvanced_town%
+				if (resident.hasTown())
+					town = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getName());
+				return StringMgmt.remUnderscore(town);
+			case "town_unformatted": // %townyadvanced_town_unformatted%
+				if (resident.hasTown())
+					town = resident.getTownOrNull().getName();
+				return town;
+			case "town_formatted": // %townyadvanced_town_formatted%
+				if (resident.hasTown())
+					town = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getFormattedName());
+				return StringMgmt.remUnderscore(town);
+			case "town_formatted_with_town_minimessage_colour": // %townyadvanced_town_formatted_with_town_minimessage_colour%
+				if (resident.hasTown()) {
+					Town residentTown = resident.getTownOrNull();
+					String townHexValue = residentTown.getMapColorHexCode();
+					if (townHexValue != null)
+						town = String.format(TownySettings.getPAPIFormattingTown(), "<#"+townHexValue+">" + residentTown.getFormattedName());
+				}
+				return StringMgmt.remUnderscore(town);
+			case "nation": // %townyadvanced_nation%
 				if (resident.hasNation())
-					nation = resident.getNationOrNull().getFormattedName();
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "towny_tag_formatted": // %townyadvanced_towny_tag_formatted%
-			if (resident.hasTown()) {
-				if (resident.getTownOrNull().hasTag())
-					town = resident.getTownOrNull().getTag();
-				else
-					town = resident.getTownOrNull().getFormattedName();
+					nation = String.format(TownySettings.getPAPIFormattingNation(), resident.getNationOrNull().getName());
+				return StringMgmt.remUnderscore(nation);
+			case "nation_unformatted": // %townyadvanced_nation_unformatted%
+				if (resident.hasNation())
+					nation = resident.getNationOrNull().getName();
+				return StringMgmt.remUnderscore(nation);
+			case "nation_formatted": // %townyadvanced_nation_formatted%
+				if (resident.hasNation())
+					nation = String.format(TownySettings.getPAPIFormattingNation(), resident.getNationOrNull().getFormattedName());
+				return StringMgmt.remUnderscore(nation);
+			case "nation_formatted_with_nation_minimessage_colour": // %townyadvanced_nation_formatted_with_nation_minimessage_colour%
+				if (resident.hasNation()) {
+					Nation residentNation = resident.getNationOrNull();
+					String nationHexValue = residentNation.getMapColorHexCode();
+					if (nationHexValue != null)
+						nation = String.format(TownySettings.getPAPIFormattingNation(), "<#"+nationHexValue+">" + residentNation.getFormattedName());
+				}
+				return StringMgmt.remUnderscore(nation);
+			case "town_balance": // %townyadvanced_town_balance%
+				if (resident.hasTown() && TownyEconomyHandler.isActive())
+					balance = getMoney(resident.getTownOrNull().getAccount().getCachedBalance());
+				return balance;
+			case "town_balance_unformatted": // %townyadvanced_town_balance_unformatted%
+				if (resident.hasTown() && TownyEconomyHandler.isActive())
+					balance = String.valueOf(resident.getTownOrNull().getAccount().getCachedBalance());
+				return balance;
+			case "nation_balance": // %townyadvanced_nation_balance%
+				if (resident.hasNation() && TownyEconomyHandler.isActive())
+					balance = getMoney(resident.getTownOrNull().getNationOrNull().getAccount().getCachedBalance());
+				return balance;
+			case "nation_balance_unformatted": // %townyadvanced_nation_balance_unformatted%
+				if (resident.hasNation() && TownyEconomyHandler.isActive())
+					balance = String.valueOf(resident.getTownOrNull().getNationOrNull().getAccount().getCachedBalance());
+				return balance;
+			case "town_tag": // %townyadvanced_town_tag%
+				if (resident.hasTown())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getTag());
+				return tag;
+			case "town_tag_override": // %townyadvanced_town_tag_override%
+				if (resident.hasTown()) {
+					if (resident.getTownOrNull().hasTag())
+						tag = String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getTag());
+					else
+						tag = StringMgmt.remUnderscore(String.format(TownySettings.getPAPIFormattingTown(), resident.getTownOrNull().getName()));
+				}
+				return tag;
+			case "town_tag_unformatted": // %townyadvanced_town_tag_unformatted%
+				if (resident.hasTown())
+					tag = resident.getTownOrNull().getTag();
+				return tag;
+			case "town_tag_override_unformatted": // %townyadvanced_town_tag_override_unformatted%
+				if (resident.hasTown()) {
+					if (resident.getTownOrNull().hasTag())
+						tag = resident.getTownOrNull().getTag();
+					else
+						tag = StringMgmt.remUnderscore(resident.getTownOrNull().getName());
+				}
+				return tag;
+			case "nation_tag": // %townyadvanced_nation_tag%
+				if (resident.hasNation())
+					tag = String.format(TownySettings.getPAPIFormattingNation(), resident.getNationOrNull().getTag());
+				return tag;
+			case "nation_tag_override": // %townyadvanced_nation_tag_override%
 				if (resident.hasNation()) {
 					if (resident.getNationOrNull().hasTag())
-						nation = resident.getNationOrNull().getTag();
+						tag = String.format(TownySettings.getPAPIFormattingNation(),
+							resident.getNationOrNull().getTag());
 					else
+						tag = StringMgmt.remUnderscore(String.format(TownySettings.getPAPIFormattingNation(),
+							resident.getNationOrNull().getName()));
+				}
+				return tag;
+			case "nation_tag_unformatted": // %townyadvanced_nation_tag_unformatted%
+				if (resident.hasNation())
+					tag = resident.getNationOrNull().getTag();
+				return tag;
+			case "nation_tag_override_unformatted": // %townyadvanced_nation_tag_override_unformatted%
+				if (resident.hasNation()) {
+					if (resident.getNationOrNull().hasTag())
+						tag = resident.getNationOrNull().getTag();
+					else
+						tag = StringMgmt.remUnderscore(resident.getNationOrNull().getName());
+				}
+				return tag;
+			case "towny_tag": // %townyadvanced_towny_tag%
+				if (resident.hasTown()) {
+					if (resident.getTownOrNull().hasTag())
+						town = resident.getTownOrNull().getTag();
+					if (resident.hasNation() && resident.getNationOrNull().hasTag())
+						nation = resident.getNationOrNull().getTag();
+				}
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "towny_formatted": // %townyadvanced_towny_formatted%
+				if (resident.hasTown()) {
+					town = resident.getTownOrNull().getFormattedName();
+					if (resident.hasNation())
 						nation = resident.getNationOrNull().getFormattedName();
 				}
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "towny_tag_override": // %townyadvanced_towny_tag_override%
-			if (resident.hasTown()) {
-				if (resident.getTownOrNull().hasTag())
-					town = resident.getTownOrNull().getTag();
-				else
-					town = StringMgmt.remUnderscore(resident.getTownOrNull().getName());
-				if (resident.hasNation()) {
-					if (resident.getNationOrNull().hasTag())
-						nation = resident.getNationOrNull().getTag();
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "towny_tag_formatted": // %townyadvanced_towny_tag_formatted%
+				if (resident.hasTown()) {
+					if (resident.getTownOrNull().hasTag())
+						town = resident.getTownOrNull().getTag();
 					else
-						StringMgmt.remUnderscore(nation = resident.getNationOrNull().getName());
+						town = resident.getTownOrNull().getFormattedName();
+					if (resident.hasNation()) {
+						if (resident.getNationOrNull().hasTag())
+							nation = resident.getNationOrNull().getTag();
+						else
+							nation = resident.getNationOrNull().getFormattedName();
+					}
 				}
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "towny_tag_override_with_minimessage_colour": // %townyadvanced_towny_tag_override_with_minimessage_colour%
-			if (resident.hasTown()) {
-				if (resident.getTownOrNull().hasTag())
-					town = resident.getTownOrNull().getTag();
-				else
-					town = StringMgmt.remUnderscore(resident.getTownOrNull().getName());
-				String townHexColour = resident.getTownOrNull().getMapColorHexCode();
-				if (townHexColour != null)
-					town = "<#"+townHexColour+">" + town;
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "towny_tag_override": // %townyadvanced_towny_tag_override%
+				if (resident.hasTown()) {
+					if (resident.getTownOrNull().hasTag())
+						town = resident.getTownOrNull().getTag();
+					else
+						town = StringMgmt.remUnderscore(resident.getTownOrNull().getName());
+					if (resident.hasNation()) {
+						if (resident.getNationOrNull().hasTag())
+							nation = resident.getNationOrNull().getTag();
+						else
+							StringMgmt.remUnderscore(nation = resident.getNationOrNull().getName());
+					}
+				}
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "towny_tag_override_with_minimessage_colour": // %townyadvanced_towny_tag_override_with_minimessage_colour%
+				if (resident.hasTown()) {
+					if (resident.getTownOrNull().hasTag())
+						town = resident.getTownOrNull().getTag();
+					else
+						town = StringMgmt.remUnderscore(resident.getTownOrNull().getName());
+					String townHexColour = resident.getTownOrNull().getMapColorHexCode();
+					if (townHexColour != null)
+						town = "<#"+townHexColour+">" + town;
 
-				if (resident.hasNation()) {
-					if (resident.getNationOrNull().hasTag())
-						nation = resident.getNationOrNull().getTag();
-					else
-						StringMgmt.remUnderscore(nation = resident.getNationOrNull().getName());
-					String nationHexColour = resident.getNationOrNull().getMapColorHexCode();
-					if (nationHexColour != null)
-						nation = "<#"+nationHexColour+">" + nation;
+					if (resident.hasNation()) {
+						if (resident.getNationOrNull().hasTag())
+							nation = resident.getNationOrNull().getTag();
+						else
+							StringMgmt.remUnderscore(nation = resident.getNationOrNull().getName());
+						String nationHexColour = resident.getNationOrNull().getMapColorHexCode();
+						if (nationHexColour != null)
+							nation = "<#"+nationHexColour+">" + nation;
+					}
 				}
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "title": // %townyadvanced_title%
-			if (resident.hasTitle())
-				title = resident.getTitle();
-			return title;
-		case "surname": // %townyadvanced_surname%
-			if (resident.hasSurname())
-				title = resident.getSurname();
-			return title;
-		case "resident_primary_rank": // %townyadvanced_resident_primary_rank%
-			return resident.getPrimaryRankPrefix();
-		case "resident_primary_rank_spaced": // %townyadvanced_resident_primary_rank_spaced%
-			rank = resident.getPrimaryRankPrefix();
-			return rank.isEmpty() ? "" : rank + " ";
-		case "towny_name_prefix": // %townyadvanced_towny_name_prefix%
-			if (resident.isMayor())
-				title = TownySettings.getMayorPrefix(resident);
-			if (resident.isKing() && !TownySettings.getKingPrefix(resident).isEmpty())
-				title = TownySettings.getKingPrefix(resident);
-			return title;
-		case "towny_name_postfix": // %townyadvanced_towny_name_postfix%
-			if (resident.isMayor())
-				title = TownySettings.getMayorPostfix(resident);
-			if (resident.isKing() && !TownySettings.getKingPostfix(resident).isEmpty())
-				title = TownySettings.getKingPostfix(resident);
-			return title;
-		case "towny_prefix": // %townyadvanced_towny_prefix%
-			if (resident.hasTitle())
-				title = resident.getTitle() + " ";
-			else {
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "title": // %townyadvanced_title%
+				if (resident.hasTitle())
+					title = resident.getTitle();
+				return title;
+			case "surname": // %townyadvanced_surname%
+				if (resident.hasSurname())
+					title = resident.getSurname();
+				return title;
+			case "resident_primary_rank": // %townyadvanced_resident_primary_rank%
+				return resident.getPrimaryRankPrefix();
+			case "resident_primary_rank_spaced": // %townyadvanced_resident_primary_rank_spaced%
+				rank = resident.getPrimaryRankPrefix();
+				return rank.isEmpty() ? "" : rank + " ";
+			case "towny_name_prefix": // %townyadvanced_towny_name_prefix%
 				if (resident.isMayor())
 					title = TownySettings.getMayorPrefix(resident);
 				if (resident.isKing() && !TownySettings.getKingPrefix(resident).isEmpty())
 					title = TownySettings.getKingPrefix(resident);
-			}
-			return title;
-		case "towny_postfix": // %townyadvanced_towny_postfix%
-			if (resident.hasSurname())
-				title = " " + resident.getSurname();
-			else {
+				return title;
+			case "towny_name_postfix": // %townyadvanced_towny_name_postfix%
 				if (resident.isMayor())
 					title = TownySettings.getMayorPostfix(resident);
 				if (resident.isKing() && !TownySettings.getKingPostfix(resident).isEmpty())
 					title = TownySettings.getKingPostfix(resident);
-			}
-			return title;
-		case "towny_colour": // %townyadvanced_towny_colour%
-			String colour = "";
-			if (!resident.hasTown())
-				colour = TownySettings.getPAPIFormattingNomad();
-			else {
-				colour = TownySettings.getPAPIFormattingResident();
-				if (resident.isMayor())
-					colour = TownySettings.getPAPIFormattingMayor();
-				if (resident.isKing())
-					colour = TownySettings.getPAPIFormattingKing();
-			}
-			return colour;
-		case "town_residents_amount": // %townyadvanced_town_residents_amount%
-			if (resident.hasTown()) {
-				amount = String.valueOf(resident.getTownOrNull().getNumResidents());
-			}
-			return amount;
-		case "town_residents_online": // %townyadvanced_town_residents_online%
-			if (resident.hasTown()) {
-				amount = String.valueOf(TownyAPI.getInstance().getOnlinePlayers(resident.getTownOrNull()).size());
-			}
-			return amount;
-		case "town_townblocks_used": // %townyadvanced_town_townblocks_used%
-			if (resident.hasTown()) {
-				amount = String.valueOf(resident.getTownOrNull().getTownBlocks().size());
-			}
-			return amount;
-		case "town_townblocks_bought": // %townyadvanced_town_townblocks_bought%
-			if (resident.hasTown()) {
-				amount = String.valueOf(resident.getTownOrNull().getPurchasedBlocks());
-			}
-			return amount;
-		case "town_townblocks_bonus": // %townyadvanced_town_townblocks_bonus%
-			if (resident.hasTown()) {
-				amount = String.valueOf(resident.getTownOrNull().getBonusBlocks());
-			}
-			return amount;
-		case "town_townblocks_maximum": // %townyadvanced_town_townblocks_maximum%
-			if (resident.hasTown()) {
-				amount = resident.getTownOrNull().getMaxTownBlocksAsAString();
-			}
-			return amount;
-		case "town_townblocks_natural_maximum": // %townyadvanced_town_townblocks_natural_maximum%
-			if (resident.hasTown()) {
-				Town restown = resident.getTownOrNull();
-				amount = restown.hasUnlimitedClaims()
-					? restown.getMaxTownBlocksAsAString()
-					: String.valueOf(restown.getMaxTownBlocks() - restown.getBonusBlocks() - restown.getPurchasedBlocks());
-			}
-			return amount;
-		case "town_mayor": // %townyadvanced_town_mayor%
-			if (resident.hasTown()) {
-				name = resident.getTownOrNull().getMayor().getName();
-			}
-			return name;
-		case "nation_king": // %townyadvanced_nation_king%
-			if (resident.hasNation()) {
-				name = resident.getNationOrNull().getKing().getName();
-			}
-			return name;
-		case "resident_friends_amount": // %townyadvanced_resident_friends_amount%
-			amount = String.valueOf(resident.getFriends().size());
-			return amount;
-		case "nation_residents_amount": // %townyadvanced_nation_residents_amount%
-			if (resident.hasNation()) {
-				amount = String.valueOf(resident.getNationOrNull().getNumResidents());
-			}
-			return amount;
-		case "nation_residents_online": // %townyadvanced_nation_residents_online%
-			if (resident.hasNation()) {
-				amount = String.valueOf(TownyAPI.getInstance().getOnlinePlayers(resident.getNationOrNull()).size());
-			}
-			return amount;
-		case "nation_capital": // %townyadvanced_nation_capital%
-			if (resident.hasNation()) {
-				name = StringMgmt.remUnderscore(resident.getNationOrNull().getCapital().getName());
-			}
-			return name;
-		case "daily_resident_tax": // %townyadvanced_daily_resident_tax%
-			return getMoney(resident.getTaxOwing(true));
-		case "daily_resident_tax_unformatted": // %townyadvanced_daily_resident_tax_unformatted%
-			return String.valueOf(resident.getTaxOwing(true));
-		case "daily_town_upkeep": // %townyadvanced_daily_town_upkeep%
-			if (resident.hasTown()) {
-				cost = TownySettings.getTownUpkeepCost(resident.getTownOrNull());
-			}
-			return getMoney(cost);
-		case "daily_town_upkeep_unformatted": // %townyadvanced_daily_town_upkeep_unformatted%
-			if (resident.hasTown()) {
-				cost = TownySettings.getTownUpkeepCost(resident.getTownOrNull());
-			}
-			return String.valueOf(cost);
-		case "daily_town_per_plot_upkeep": // %townyadvanced_daily_town_per_plot_upkeep%
-			return getMoney(TownySettings.getTownUpkeep());
-		case "daily_town_overclaimed_per_plot_upkeep_penalty": // %townyadvanced_daily_town_overclaimed_per_plot_upkeep_penalty%
-			return getMoney(TownySettings.getUpkeepPenalty());
-		case "daily_town_upkeep_reduction_from_town_level": // %townyadvanced_daily_town_upkeep_reduction_from_town_level%
-			cost = resident.hasTown() 
-				? resident.getTownOrNull().getTownLevel().upkeepModifier()
-				: 1.0;
-			return cost == 1.0 ? "0" : String.valueOf(dFormat.format((1.0 - cost) * 100));
-		case "daily_town_upkeep_reduction_from_nation_level": // %townyadvanced_daily_town_upkeep_reduction_from_nation_level%
-			cost = resident.hasNation() 
-				? resident.getNationOrNull().getNationLevel().nationTownUpkeepModifier()
-				: 1.0;
-			return cost == 1.0 ? "0" : String.valueOf(dFormat.format((1.0 - cost) * 100));
-		case "daily_nation_upkeep": // %townyadvanced_daily_nation_upkeep%
-			if (resident.hasNation()) {
-				cost = TownySettings.getNationUpkeepCost(resident.getNationOrNull());
-			}
-			return getMoney(cost);
-		case "daily_nation_upkeep_unformatted": // %townyadvanced_daily_nation_upkeep_unformatted%
-			if (resident.hasNation()) {
-				cost = TownySettings.getNationUpkeepCost(resident.getNationOrNull());
-			}
-			return String.valueOf(cost);
-		case "daily_nation_per_town_upkeep": // %townyadvanced_daily_nation_per_town_upkeep%
-			return String.valueOf(TownySettings.getNationUpkeep());
-		case "daily_nation_upkeep_reduction_from_nation_level": // %townyadvanced_daily_nation_upkeep_reduction_from_nation_level%
-			cost = resident.hasNation() 
-				? resident.getNationOrNull().getNationLevel().upkeepModifier()
-				: 1.0;
-			return cost == 1.0 ? "0" : String.valueOf(dFormat.format((1.0 - cost) * 100));
-		case "daily_town_tax": // %townyadvanced_daily_town_tax%
-			if (resident.hasTown()) {
-				cost = resident.getTownOrNull().getTaxes();
-				percentage = resident.getTownOrNull().isTaxPercentage();
-			}
-			return String.valueOf(cost) + (percentage ? "%" : "");
-		case "daily_nation_tax": // %townyadvanced_daily_nation_tax%
-			if (resident.hasNation()) {
-				cost = resident.getNationOrNull().getTaxes();
-				percentage = resident.getNationOrNull().isTaxPercentage();
-			}
-			return String.valueOf(cost) + (percentage ? "%" : "");
-		case "town_creation_cost": // %townyadvanced_town_creation_cost%
-			return getMoney(TownySettings.getNewTownPrice());
-		case "nation_creation_cost": // %townyadvanced_nation_creation_cost%
-			return getMoney(TownySettings.getNewNationPrice());
-		case "town_merge_cost": // %townyadvanced_town_merge_cost%
-			return getMoney(TownySettings.getBaseCostForTownMerge());
-		case "town_merge_per_plot_percentage": // %townyadvanced_town_merge_per_plot_percentage%
-			return String.valueOf(TownySettings.getPercentageCostPerPlot());
-		case "town_reclaim_cost": // %townyadvanced_town_reclaim_cost%
-			return getMoney(TownySettings.getEcoPriceReclaimTown());
-		case "town_reclaim_max_duration_hours": // %townyadvanced_town_reclaim_max_duration_hours%
-			return String.valueOf(TownySettings.getTownRuinsMaxDurationHours());
-		case "town_reclaim_min_duration_hours": // %townyadvanced_town_reclaim_max_duration_hours%
-			return String.valueOf(TownySettings.getTownRuinsMinDurationHours());
-		case "townblock_buy_bonus_price": // %townyadvanced_townblock_buy_bonus_price%
-			return getMoney(TownySettings.getPurchasedBonusBlocksCost());
-		case "townblock_claim_price": // %townyadvanced_townblock_claim_price%
-			return getMoney(TownySettings.getClaimPrice());
-		case "townblock_unclaim_price": // %townyadvanced_townblock_unclaim_price%
-			return getMoney(TownySettings.getClaimRefundPrice());
-		case "outpost_claim_price": // %townyadvanced_outpost_claim_price%
-			return getMoney(TownySettings.getOutpostCost());
-		case "townblock_next_claim_price": // %townyadvanced_townblock_next_claim_price%
-			if (resident.hasTown())
-				cost = resident.getTownOrNull().getTownBlockCost();
-			else
-				cost = TownySettings.getClaimPrice();
-			return getMoney(cost);
-
-		case "has_town": // %townyadvanced_has_town%
-			return String.valueOf(resident.hasTown());
-		case "has_nation": // %townyadvanced_has_nation%
-			return String.valueOf(resident.hasNation());
-		case "nation_tag_town_formatted": // %townyadvanced_nation_tag_town_formatted%
-			if (resident.hasTown()) {
-				town = resident.getTownOrNull().getFormattedName();
-				if (resident.hasNation() && resident.getNationOrNull().hasTag())
-					nation = resident.getNationOrNull().getTag();
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "nation_tag_town_name": // %townyadvanced_nation_tag_town_name%
-			if (resident.hasTown()) {
-				town = resident.getTownOrNull().getName();
-				if (resident.hasNation() && resident.getNationOrNull().hasTag())
-					nation = resident.getNationOrNull().getTag();
-			}
-			if (!nation.isEmpty())
-				tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
-			else if (!town.isEmpty())
-				tag = String.format(TownySettings.getPAPIFormattingTown(), town);
-			return tag;
-		case "town_map_color_hex": // %townyadvanced_town_map_color_hex%
-			if (resident.hasTown()){
-				hex = resident.getTownOrNull().getMapColorHexCode();
-				if (!hex.isEmpty())
-					hex = "#"+hex;
-			}
-			return hex;				
-		case "nation_map_color_hex": // %townyadvanced_nation_map_color_hex%
-			if (resident.hasNation()){
-				hex = resident.getNationOrNull().getMapColorHexCode();
-				if (!hex.isEmpty())
-					hex = "#"+hex;
-			}
-			return hex;
-		case "town_map_color_minimessage_hex": // %townyadvanced_town_map_color_minimessage_hex%
-			if (resident.hasTown()){
-				hex = resident.getTownOrNull().getMapColorHexCode();
-				if (!hex.isEmpty())
-					hex = "<#"+hex+">";
-			}
-			return hex;				
-		case "nation_map_color_minimessage_hex": // %townyadvanced_nation_map_color_minimessage_hex%
-			if (resident.hasNation()){
-				hex = resident.getNationOrNull().getMapColorHexCode();
-				if (!hex.isEmpty())
-					hex = "<#"+hex+">";
-			}
-			return hex;	
-		case "town_ranks": // %townyadvanced_town_ranks%
-			if (resident.isMayor())
-				rank = Translation.of("mayor_sing");
-			else if (!resident.getTownRanks().isEmpty())
-				rank = StringMgmt.capitalize(StringMgmt.join(resident.getTownRanks(), ", "));
-			return rank;
-			
-		case "nation_ranks": // %townyadvanced_nation_ranks%
-			if (resident.isKing())
-				rank = Translation.of("king_sing");
-			else if (!resident.getNationRanks().isEmpty())
-				rank = StringMgmt.capitalize(StringMgmt.join(resident.getNationRanks(), ", "));
-			return rank;
-		case "player_status": // %townyadvanced_player_status%
-			if (!resident.hasTown())
-				tag = nomad;
-			else {
-				if (resident.isKing())
-					tag = king;
-				else if (resident.isMayor())
-					tag = mayor;
+				return title;
+			case "towny_prefix": // %townyadvanced_towny_prefix%
+				if (resident.hasTitle())
+					title = resident.getTitle() + " ";
+				else {
+					if (resident.isMayor())
+						title = TownySettings.getMayorPrefix(resident);
+					if (resident.isKing() && !TownySettings.getKingPrefix(resident).isEmpty())
+						title = TownySettings.getKingPrefix(resident);
+				}
+				return title;
+			case "towny_postfix": // %townyadvanced_towny_postfix%
+				if (resident.hasSurname())
+					title = " " + resident.getSurname();
+				else {
+					if (resident.isMayor())
+						title = TownySettings.getMayorPostfix(resident);
+					if (resident.isKing() && !TownySettings.getKingPostfix(resident).isEmpty())
+						title = TownySettings.getKingPostfix(resident);
+				}
+				return title;
+			case "towny_colour": // %townyadvanced_towny_colour%
+				String colour = "";
+				if (!resident.hasTown())
+					colour = TownySettings.getPAPIFormattingNomad();
+				else {
+					colour = TownySettings.getPAPIFormattingResident();
+					if (resident.isMayor())
+						colour = TownySettings.getPAPIFormattingMayor();
+					if (resident.isKing())
+						colour = TownySettings.getPAPIFormattingKing();
+				}
+				return colour;
+			case "town_residents_amount": // %townyadvanced_town_residents_amount%
+				if (resident.hasTown()) {
+					amount = String.valueOf(resident.getTownOrNull().getNumResidents());
+				}
+				return amount;
+			case "town_residents_online": // %townyadvanced_town_residents_online%
+				if (resident.hasTown()) {
+					amount = String.valueOf(TownyAPI.getInstance().getOnlinePlayers(resident.getTownOrNull()).size());
+				}
+				return amount;
+			case "town_townblocks_used": // %townyadvanced_town_townblocks_used%
+				if (resident.hasTown()) {
+					amount = String.valueOf(resident.getTownOrNull().getTownBlocks().size());
+				}
+				return amount;
+			case "town_townblocks_bought": // %townyadvanced_town_townblocks_bought%
+				if (resident.hasTown()) {
+					amount = String.valueOf(resident.getTownOrNull().getPurchasedBlocks());
+				}
+				return amount;
+			case "town_townblocks_bonus": // %townyadvanced_town_townblocks_bonus%
+				if (resident.hasTown()) {
+					amount = String.valueOf(resident.getTownOrNull().getBonusBlocks());
+				}
+				return amount;
+			case "town_townblocks_maximum": // %townyadvanced_town_townblocks_maximum%
+				if (resident.hasTown()) {
+					amount = resident.getTownOrNull().getMaxTownBlocksAsAString();
+				}
+				return amount;
+			case "town_townblocks_natural_maximum": // %townyadvanced_town_townblocks_natural_maximum%
+				if (resident.hasTown()) {
+					Town restown = resident.getTownOrNull();
+					amount = restown.hasUnlimitedClaims()
+						? restown.getMaxTownBlocksAsAString()
+						: String.valueOf(restown.getMaxTownBlocks() - restown.getBonusBlocks() - restown.getPurchasedBlocks());
+				}
+				return amount;
+			case "town_mayor": // %townyadvanced_town_mayor%
+				if (resident.hasTown()) {
+					name = resident.getTownOrNull().getMayor().getName();
+				}
+				return name;
+			case "nation_king": // %townyadvanced_nation_king%
+				if (resident.hasNation()) {
+					name = resident.getNationOrNull().getKing().getName();
+				}
+				return name;
+			case "resident_friends_amount": // %townyadvanced_resident_friends_amount%
+				amount = String.valueOf(resident.getFriends().size());
+				return amount;
+			case "nation_residents_amount": // %townyadvanced_nation_residents_amount%
+				if (resident.hasNation()) {
+					amount = String.valueOf(resident.getNationOrNull().getNumResidents());
+				}
+				return amount;
+			case "nation_residents_online": // %townyadvanced_nation_residents_online%
+				if (resident.hasNation()) {
+					amount = String.valueOf(TownyAPI.getInstance().getOnlinePlayers(resident.getNationOrNull()).size());
+				}
+				return amount;
+			case "nation_capital": // %townyadvanced_nation_capital%
+				if (resident.hasNation()) {
+					name = StringMgmt.remUnderscore(resident.getNationOrNull().getCapital().getName());
+				}
+				return name;
+			case "daily_resident_tax": // %townyadvanced_daily_resident_tax%
+				return getMoney(resident.getTaxOwing(true));
+			case "daily_resident_tax_unformatted": // %townyadvanced_daily_resident_tax_unformatted%
+				return String.valueOf(resident.getTaxOwing(true));
+			case "daily_town_upkeep": // %townyadvanced_daily_town_upkeep%
+				if (resident.hasTown()) {
+					cost = TownySettings.getTownUpkeepCost(resident.getTownOrNull());
+				}
+				return getMoney(cost);
+			case "daily_town_upkeep_unformatted": // %townyadvanced_daily_town_upkeep_unformatted%
+				if (resident.hasTown()) {
+					cost = TownySettings.getTownUpkeepCost(resident.getTownOrNull());
+				}
+				return String.valueOf(cost);
+			case "daily_town_per_plot_upkeep": // %townyadvanced_daily_town_per_plot_upkeep%
+				return getMoney(TownySettings.getTownUpkeep());
+			case "daily_town_overclaimed_per_plot_upkeep_penalty": // %townyadvanced_daily_town_overclaimed_per_plot_upkeep_penalty%
+				return getMoney(TownySettings.getUpkeepPenalty());
+			case "daily_town_upkeep_reduction_from_town_level": // %townyadvanced_daily_town_upkeep_reduction_from_town_level%
+				cost = resident.hasTown()
+					? resident.getTownOrNull().getTownLevel().upkeepModifier()
+					: 1.0;
+				return cost == 1.0 ? "0" : String.valueOf(dFormat.format((1.0 - cost) * 100));
+			case "daily_town_upkeep_reduction_from_nation_level": // %townyadvanced_daily_town_upkeep_reduction_from_nation_level%
+				cost = resident.hasNation()
+					? resident.getNationOrNull().getNationLevel().nationTownUpkeepModifier()
+					: 1.0;
+				return cost == 1.0 ? "0" : String.valueOf(dFormat.format((1.0 - cost) * 100));
+			case "daily_nation_upkeep": // %townyadvanced_daily_nation_upkeep%
+				if (resident.hasNation()) {
+					cost = TownySettings.getNationUpkeepCost(resident.getNationOrNull());
+				}
+				return getMoney(cost);
+			case "daily_nation_upkeep_unformatted": // %townyadvanced_daily_nation_upkeep_unformatted%
+				if (resident.hasNation()) {
+					cost = TownySettings.getNationUpkeepCost(resident.getNationOrNull());
+				}
+				return String.valueOf(cost);
+			case "daily_nation_per_town_upkeep": // %townyadvanced_daily_nation_per_town_upkeep%
+				return String.valueOf(TownySettings.getNationUpkeep());
+			case "daily_nation_upkeep_reduction_from_nation_level": // %townyadvanced_daily_nation_upkeep_reduction_from_nation_level%
+				cost = resident.hasNation()
+					? resident.getNationOrNull().getNationLevel().upkeepModifier()
+					: 1.0;
+				return cost == 1.0 ? "0" : String.valueOf(dFormat.format((1.0 - cost) * 100));
+			case "daily_town_tax": // %townyadvanced_daily_town_tax%
+				if (resident.hasTown()) {
+					cost = resident.getTownOrNull().getTaxes();
+					percentage = resident.getTownOrNull().isTaxPercentage();
+				}
+				return String.valueOf(cost) + (percentage ? "%" : "");
+			case "daily_nation_tax": // %townyadvanced_daily_nation_tax%
+				if (resident.hasNation()) {
+					cost = resident.getNationOrNull().getTaxes();
+					percentage = resident.getNationOrNull().isTaxPercentage();
+				}
+				return String.valueOf(cost) + (percentage ? "%" : "");
+			case "town_creation_cost": // %townyadvanced_town_creation_cost%
+				return getMoney(TownySettings.getNewTownPrice());
+			case "nation_creation_cost": // %townyadvanced_nation_creation_cost%
+				return getMoney(TownySettings.getNewNationPrice());
+			case "town_merge_cost": // %townyadvanced_town_merge_cost%
+				return getMoney(TownySettings.getBaseCostForTownMerge());
+			case "town_merge_per_plot_percentage": // %townyadvanced_town_merge_per_plot_percentage%
+				return String.valueOf(TownySettings.getPercentageCostPerPlot());
+			case "town_reclaim_cost": // %townyadvanced_town_reclaim_cost%
+				return getMoney(TownySettings.getEcoPriceReclaimTown());
+			case "town_reclaim_max_duration_hours": // %townyadvanced_town_reclaim_max_duration_hours%
+				return String.valueOf(TownySettings.getTownRuinsMaxDurationHours());
+			case "town_reclaim_min_duration_hours": // %townyadvanced_town_reclaim_max_duration_hours%
+				return String.valueOf(TownySettings.getTownRuinsMinDurationHours());
+			case "townblock_buy_bonus_price": // %townyadvanced_townblock_buy_bonus_price%
+				return getMoney(TownySettings.getPurchasedBonusBlocksCost());
+			case "townblock_claim_price": // %townyadvanced_townblock_claim_price%
+				return getMoney(TownySettings.getClaimPrice());
+			case "townblock_unclaim_price": // %townyadvanced_townblock_unclaim_price%
+				return getMoney(TownySettings.getClaimRefundPrice());
+			case "outpost_claim_price": // %townyadvanced_outpost_claim_price%
+				return getMoney(TownySettings.getOutpostCost());
+			case "townblock_next_claim_price": // %townyadvanced_townblock_next_claim_price%
+				if (resident.hasTown())
+					cost = resident.getTownOrNull().getTownBlockCost();
 				else
-					tag = res;
+					cost = TownySettings.getClaimPrice();
+				return getMoney(cost);
+
+			case "has_town": // %townyadvanced_has_town%
+				return String.valueOf(resident.hasTown());
+			case "has_nation": // %townyadvanced_has_nation%
+				return String.valueOf(resident.hasNation());
+			case "nation_tag_town_formatted": // %townyadvanced_nation_tag_town_formatted%
+				if (resident.hasTown()) {
+					town = resident.getTownOrNull().getFormattedName();
+					if (resident.hasNation() && resident.getNationOrNull().hasTag())
+						nation = resident.getNationOrNull().getTag();
+				}
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "nation_tag_town_name": // %townyadvanced_nation_tag_town_name%
+				if (resident.hasTown()) {
+					town = resident.getTownOrNull().getName();
+					if (resident.hasNation() && resident.getNationOrNull().hasTag())
+						nation = resident.getNationOrNull().getTag();
+				}
+				if (!nation.isEmpty())
+					tag = TownySettings.getPAPIFormattingBoth().replace("%t", town).replace("%n", nation);
+				else if (!town.isEmpty())
+					tag = String.format(TownySettings.getPAPIFormattingTown(), town);
+				return tag;
+			case "town_map_color_hex": // %townyadvanced_town_map_color_hex%
+				if (resident.hasTown()){
+					hex = resident.getTownOrNull().getMapColorHexCode();
+					if (!hex.isEmpty())
+						hex = "#"+hex;
+				}
+				return hex;
+			case "nation_map_color_hex": // %townyadvanced_nation_map_color_hex%
+				if (resident.hasNation()){
+					hex = resident.getNationOrNull().getMapColorHexCode();
+					if (!hex.isEmpty())
+						hex = "#"+hex;
+				}
+				return hex;
+			case "town_map_color_minimessage_hex": // %townyadvanced_town_map_color_minimessage_hex%
+				if (resident.hasTown()){
+					hex = resident.getTownOrNull().getMapColorHexCode();
+					if (!hex.isEmpty())
+						hex = "<#"+hex+">";
+				}
+				return hex;
+			case "nation_map_color_minimessage_hex": // %townyadvanced_nation_map_color_minimessage_hex%
+				if (resident.hasNation()){
+					hex = resident.getNationOrNull().getMapColorHexCode();
+					if (!hex.isEmpty())
+						hex = "<#"+hex+">";
+				}
+				return hex;
+			case "town_ranks": // %townyadvanced_town_ranks%
+				if (resident.isMayor())
+					rank = Translation.of("mayor_sing");
+				else if (!resident.getTownRanks().isEmpty())
+					rank = StringMgmt.capitalize(StringMgmt.join(resident.getTownRanks(), ", "));
+				return rank;
+
+			case "nation_ranks": // %townyadvanced_nation_ranks%
+				if (resident.isKing())
+					rank = Translation.of("king_sing");
+				else if (!resident.getNationRanks().isEmpty())
+					rank = StringMgmt.capitalize(StringMgmt.join(resident.getNationRanks(), ", "));
+				return rank;
+			case "player_status": // %townyadvanced_player_status%
+				if (!resident.hasTown())
+					tag = nomad;
+				else {
+					if (resident.isKing())
+						tag = king;
+					else if (resident.isMayor())
+						tag = mayor;
+					else
+						tag = res;
+				}
+				return tag;
+			case "town_prefix": // %townyadvanced_town_prefix%
+				return resident.hasTown() ? TownySettings.getTownPrefix(resident.getTownOrNull()) : "";
+			case "town_postfix": // %townyadvanced_town_postfix%
+				return resident.hasTown() ? TownySettings.getTownPostfix(resident.getTownOrNull()) : "";
+			case "nation_prefix": // %townyadvanced_nation_prefix%
+				return resident.hasNation() ? TownySettings.getNationPrefix(resident.getNationOrNull()) : "";
+			case "nation_postfix": // %townyadvanced_nation_postfix%
+				return resident.hasNation() ? TownySettings.getNationPostfix(resident.getNationOrNull()) : "";
+			case "player_jailed": // %townyadvanced_player_jailed%
+				return String.valueOf(resident.isJailed());
+			case "is_nation_peaceful": // %townyadvanced_is_nation_peaceful%	
+				return resident.hasNation() ? (resident.getNationOrNull().isNeutral() ? Translation.of("status_town_title_peaceful"): "") : "";
+			case "is_town_peaceful": // %townyadvanced_is_town_peaceful%	
+				return resident.hasTown() ? (resident.getTownOrNull().isNeutral() ? Translation.of("status_town_title_peaceful"): "") : "";
+			case "is_town_public": // %townyadvanced_is_town_public%
+				return resident.hasTown() ? (resident.getTownOrNull().isPublic() ? Translation.of("status_public") : "") : "";
+			case "is_town_open": // %townyadvanced_is_town_open%
+				return resident.hasTown() ? (resident.getTownOrNull().isOpen() ? Translation.of("status_title_open") : "") : "";
+			case "town_board": // %townyadvanced_town_board%
+				return resident.hasTown() ? resident.getTownOrNull().getBoard() : "";
+			case "nation_board": // %townyadvanced_nation_board%
+				return resident.hasTown() ? (resident.hasNation() ? resident.getNationOrNull().getBoard() : "") : "";
+			case "time_until_new_day_formatted": {// %townyadvanced_time_until_new_day_formatted%
+				Locale locale = Translation.getLocaleOffline(player);
+				return Translatable.of("msg_time_until_a_new_day").append(TimeMgmt.formatCountdownTime(TimeMgmt.townyTime(true), locale)).translate(locale);
 			}
-			return tag;
-		case "town_prefix": // %townyadvanced_town_prefix%
-			return resident.hasTown() ? TownySettings.getTownPrefix(resident.getTownOrNull()) : "";
-		case "town_postfix": // %townyadvanced_town_postfix%
-			return resident.hasTown() ? TownySettings.getTownPostfix(resident.getTownOrNull()) : "";
-		case "nation_prefix": // %townyadvanced_nation_prefix%
-			return resident.hasNation() ? TownySettings.getNationPrefix(resident.getNationOrNull()) : "";
-		case "nation_postfix": // %townyadvanced_nation_postfix%
-			return resident.hasNation() ? TownySettings.getNationPostfix(resident.getNationOrNull()) : "";
-		case "player_jailed": // %townyadvanced_player_jailed%
-			return String.valueOf(resident.isJailed());
-		case "is_nation_peaceful": // %townyadvanced_is_nation_peaceful%	
-			return resident.hasNation() ? (resident.getNationOrNull().isNeutral() ? Translation.of("status_town_title_peaceful"): "") : "";
-		case "is_town_peaceful": // %townyadvanced_is_town_peaceful%	
-			return resident.hasTown() ? (resident.getTownOrNull().isNeutral() ? Translation.of("status_town_title_peaceful"): "") : "";
-		case "is_town_public": // %townyadvanced_is_town_public%
-			return resident.hasTown() ? (resident.getTownOrNull().isPublic() ? Translation.of("status_public") : "") : "";
-		case "is_town_open": // %townyadvanced_is_town_open%
-			return resident.hasTown() ? (resident.getTownOrNull().isOpen() ? Translation.of("status_title_open") : "") : "";
-		case "town_board": // %townyadvanced_town_board%
-			return resident.hasTown() ? resident.getTownOrNull().getBoard() : "";
-		case "nation_board": // %townyadvanced_nation_board%
-			return resident.hasTown() ? (resident.hasNation() ? resident.getNationOrNull().getBoard() : "") : "";
-		case "time_until_new_day_formatted": {// %townyadvanced_time_until_new_day_formatted%
-			Locale locale = Translation.getLocaleOffline(player);
-			return Translatable.of("msg_time_until_a_new_day").append(TimeMgmt.formatCountdownTime(TimeMgmt.townyTime(true), locale)).translate(locale);
-		}
-		case "time_until_new_day_hours_formatted": // %townyadvanced_time_until_new_day_hours_formatted%
-			return TimeMgmt.formatCountdownTimeHours(TimeMgmt.townyTime(true), player.getPlayer()); 
-		case "time_until_new_day_minutes_formatted": // %townyadvanced_time_until_new_day_minutes_formatted%
-			return TimeMgmt.formatCountdownTimeMinutes(TimeMgmt.townyTime(true), player.getPlayer());
-		case "time_until_new_day_seconds_formatted": // %townyadvanced_time_until_new_day_seconds_formatted%
-			return TimeMgmt.formatCountdownTimeSeconds(TimeMgmt.townyTime(true), player.getPlayer());
-		case "time_until_new_day_hours_raw": // %townyadvanced_time_until_new_day_hours_raw%
-			return TimeMgmt.countdownTimeHoursRaw(TimeMgmt.townyTime(true)); 
-		case "time_until_new_day_minutes_raw": // %townyadvanced_time_until_new_day_minutes_raw%
-			return TimeMgmt.countdownTimeMinutesRaw(TimeMgmt.townyTime(true));
-		case "time_until_new_day_seconds_raw": // %townyadvanced_time_until_new_day_seconds_raw%
-			return TimeMgmt.countdownTimeSecondsRaw(TimeMgmt.townyTime(true));
-		case "number_of_towns_in_server": // %townyadvanced_number_of_towns_in_server%
-			return String.valueOf(TownyUniverse.getInstance().getTowns().size());
-		case "number_of_neutral_towns_in_server": // %townyadvanced_number_of_neutral_towns_in_server%
-			return String.valueOf(TownyUniverse.getInstance().getTowns().stream().filter(Town::isNeutral).count());
-		case "nation_or_town_name":	// %townyadvanced_nation_or_town_name%
-			return !resident.hasTown() 
-				? ""
-				: resident.hasNation()
+			case "time_until_new_day_hours_formatted": // %townyadvanced_time_until_new_day_hours_formatted%
+				return TimeMgmt.formatCountdownTimeHours(TimeMgmt.townyTime(true), player.getPlayer());
+			case "time_until_new_day_minutes_formatted": // %townyadvanced_time_until_new_day_minutes_formatted%
+				return TimeMgmt.formatCountdownTimeMinutes(TimeMgmt.townyTime(true), player.getPlayer());
+			case "time_until_new_day_seconds_formatted": // %townyadvanced_time_until_new_day_seconds_formatted%
+				return TimeMgmt.formatCountdownTimeSeconds(TimeMgmt.townyTime(true), player.getPlayer());
+			case "time_until_new_day_hours_raw": // %townyadvanced_time_until_new_day_hours_raw%
+				return TimeMgmt.countdownTimeHoursRaw(TimeMgmt.townyTime(true));
+			case "time_until_new_day_minutes_raw": // %townyadvanced_time_until_new_day_minutes_raw%
+				return TimeMgmt.countdownTimeMinutesRaw(TimeMgmt.townyTime(true));
+			case "time_until_new_day_seconds_raw": // %townyadvanced_time_until_new_day_seconds_raw%
+				return TimeMgmt.countdownTimeSecondsRaw(TimeMgmt.townyTime(true));
+			case "number_of_towns_in_server": // %townyadvanced_number_of_towns_in_server%
+				return String.valueOf(TownyUniverse.getInstance().getTowns().size());
+			case "number_of_neutral_towns_in_server": // %townyadvanced_number_of_neutral_towns_in_server%
+				return String.valueOf(TownyUniverse.getInstance().getTowns().stream().filter(Town::isNeutral).count());
+			case "nation_or_town_name":	// %townyadvanced_nation_or_town_name%
+				return !resident.hasTown()
+					? ""
+					: resident.hasNation()
 					? String.format(TownySettings.getPAPIFormattingNation(), StringMgmt.remUnderscore(resident.getNationOrNull().getName()))
 					: String.format(TownySettings.getPAPIFormattingTown(), StringMgmt.remUnderscore(resident.getTownOrNull().getName()));
 
-		case "resident_join_date_unformatted": // %townyadvanced_resident_join_date_unformatted%
-			return String.valueOf(resident.getRegistered());
-		case "resident_join_date_formatted":// %townyadvanced_resident_join_date_formatted%
-			return TownyFormatter.getFormattedResidentRegistration(resident);
+			case "resident_join_date_unformatted": // %townyadvanced_resident_join_date_unformatted%
+				return String.valueOf(resident.getRegistered());
+			case "resident_join_date_formatted":// %townyadvanced_resident_join_date_formatted%
+				return TownyFormatter.getFormattedResidentRegistration(resident);
 
-		default:
-			return "";
+			default:
+				return "";
 		}
 	}
 
@@ -756,10 +759,10 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 		}
 
 		String value = switch(identifier) {
-		case "town_balance" -> getMoney(town.getAccount().getCachedBalance()); // %townyadvanced_top_town_balance_n%
-		case "town_residents" -> String.valueOf(town.getNumResidents());       // %townyadvanced_top_town_residents_n%
-		case "town_land" -> String.valueOf(town.getNumTownBlocks());           // %townyadvanced_top_town_land_n%
-		default -> "";
+			case "town_balance" -> getMoney(town.getAccount().getCachedBalance()); // %townyadvanced_top_town_balance_n%
+			case "town_residents" -> String.valueOf(town.getNumResidents());       // %townyadvanced_top_town_residents_n%
+			case "town_land" -> String.valueOf(town.getNumTownBlocks());           // %townyadvanced_top_town_land_n%
+			default -> "";
 		};
 
 		return String.format(TownySettings.getPAPILeaderboardFormat(), StringMgmt.remUnderscore(town.getName()), value);
@@ -768,10 +771,10 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 	@Nullable
 	private Town getTownForLeaderBoardPlaceholder(String identifier, int num) {
 		ComparatorType type = switch (identifier) {
-		case "town_balance" -> ComparatorType.BALANCE;     // %townyadvanced_top_town_balance_n%
-		case "town_residents" -> ComparatorType.RESIDENTS; // %townyadvanced_top_town_residents_n%
-		case "town_land" -> ComparatorType.TOWNBLOCKS;     // %townyadvanced_top_town_land_n%
-		default -> null;
+			case "town_balance" -> ComparatorType.BALANCE;     // %townyadvanced_top_town_balance_n%
+			case "town_residents" -> ComparatorType.RESIDENTS; // %townyadvanced_top_town_residents_n%
+			case "town_land" -> ComparatorType.TOWNBLOCKS;     // %townyadvanced_top_town_land_n%
+			default -> null;
 		};
 		if (type == null) {
 			return null;
@@ -803,8 +806,8 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 				return townblock != null ? StringMgmt.capitalize(townblock.getType().toString()) : "";
 			case "player_plot_owner": // %townyadvanced_player_plot_owner%
 				return townblock != null ? String.valueOf(townblock.isOwner(resident)) : "false";
-            case "player_plot_is_trusted": // %townyadvanced_player_plot_is_trusted%
-                return townblock != null ? String.valueOf(townblock.hasTrustedResident(resident)) : "";
+			case "player_plot_is_trusted": // %townyadvanced_player_plot_is_trusted%
+				return townblock != null ? String.valueOf(townblock.hasTrustedResident(resident)) : "";
 			case "player_location_town_or_wildname": // %townyadvanced_player_location_town_or_wildname%
 				return townblock != null ? townblock.getTownOrNull().getName() : TownyAPI.getInstance().getTownyWorld(player.getWorld()).getFormattedUnclaimedZoneName();
 			case "player_location_formattedtown_or_wildname": // %townyadvanced_player_location_formattedtown_or_wildname%
@@ -818,7 +821,21 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 			case "player_location_plotgroup_name": // %townyadvanced_player_location_plotgroup_name%
 				return townblock != null ? (townblock.hasPlotObjectGroup() ? townblock.getPlotObjectGroup().getName() : "") : "";
 			case "player_location_plot_owner_name": // %townyadvanced_player_location_plot_owner_name%
-				return (townblock != null && townblock.hasResident()) ? townblock.getResidentOrNull().getName() : ""; 
+				return (townblock != null && townblock.hasResident()) ? townblock.getResidentOrNull().getName() : "";
+			case "player_location_allowed_build": // %townyadvanced_player_location_allowed_build%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.BUILD) ? "true" : "false";
+			case "player_location_allowed_destroy": // %townyadvanced_player_location_allowed_destroy%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.DESTROY) ? "true" : "false";
+			case "player_location_allowed_itemuse": // %townyadvanced_player_location_allowed_itemuse%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.ITEM_USE) ? "true" : "false";
+			case "player_location_allowed_switch": // %townyadvanced_player_location_allowed_switch%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.SWITCH) ? "true" : "false";
+			case "player_location_mobs": // %townyadvanced_player_location_mobs%
+				return townblock != null ? (townblock.getPermissions().mobs ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).hasWildernessMobs() ? "true" : "false");
+			case "player_location_explosion": // %townyadvanced_player_location_mobs%
+				return townblock != null ? (townblock.getPermissions().explosion ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).isExpl() ? "true" : "false");
+			case "player_location_firespread": // %townyadvanced_player_location_mobs%
+				return townblock != null ? (townblock.getPermissions().fire ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).isFire() ? "true" : "false");
 			case "player_location_town_prefix": // %townyadvanced_player_location_town_prefix%
 				return townblock != null ? townblock.getTownOrNull().getPrefix(): "";
 			case "player_location_town_postfix": // %townyadvanced_player_location_town_postfix%
@@ -841,26 +858,26 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 				return townblock != null && townblock.isHomeBlock() && townblock.getTownOrNull().hasResident(resident) ? "TRUE" : "FALSE";
 			case "player_location_in_homeblock_ownnation": // %townyadvanced_player_location_in_homeblock_ownnation%
 				return townblock != null && townblock.isHomeBlock() && resident.hasNation() && townblock.getTownOrNull().hasNation()
-						&& townblock.getTownOrNull().getNationOrNull().hasTown(resident.getTownOrNull()) ? "TRUE" : "FALSE";
+					&& townblock.getTownOrNull().getNationOrNull().hasTown(resident.getTownOrNull()) ? "TRUE" : "FALSE";
 			case "player_location_in_homeblock_enemy": // %townyadvanced_player_location_in_homeblock_enemy%
 				return townblock != null && townblock.isHomeBlock() && resident.hasTown()
-						&& CombatUtil.isEnemy(townblock.getTownOrNull(), resident.getTownOrNull()) ? "TRUE" : "FALSE";
+					&& CombatUtil.isEnemy(townblock.getTownOrNull(), resident.getTownOrNull()) ? "TRUE" : "FALSE";
 			case "player_location_in_homeblock_ally": // %townyadvanced_player_location_in_homeblock_ally%
 				return townblock != null && townblock.isHomeBlock() && resident.hasTown()
-						&& CombatUtil.isAlly(townblock.getTownOrNull(), resident.getTownOrNull()) ? "TRUE" : "FALSE";
+					&& CombatUtil.isAlly(townblock.getTownOrNull(), resident.getTownOrNull()) ? "TRUE" : "FALSE";
 			case "player_town_is_trusted": // %townyadvanced_player_town_is_trusted%
 				return townblock != null ? String.valueOf(townblock.getTownOrNull().hasTrustedResident(resident)) : "";
 			case "number_of_towns_in_world": // %townyadvanced_number_of_towns_in_world%
 				return String.valueOf(TownyUniverse.getInstance().getTowns().stream()
-						.filter(t -> t.getHomeblockWorld().equals(townblock.getWorld()))
-						.count());
+					.filter(t -> t.getHomeblockWorld().equals(townblock.getWorld()))
+					.count());
 			case "number_of_neutral_towns_in_world": // %townyadvanced_number_of_neutral_towns_in_world%
 				return String.valueOf(TownyUniverse.getInstance().getTowns().stream()
-						.filter(t -> t.isNeutral())
-						.filter(t -> t.getHomeblockWorld().equals(townblock.getWorld()))
-						.count());
+					.filter(t -> t.isNeutral())
+					.filter(t -> t.getHomeblockWorld().equals(townblock.getWorld()))
+					.count());
 			case "player_location_town_forsale_cost": // %townyadvanced_player_location_town_forsale_cost%
-				return townblock == null ? "" : 
+				return townblock == null ? "" :
 					townblock.getTownOrNull().isForSale()
 						? getMoney(townblock.getTownOrNull().getForSalePrice())
 						: Translation.of("msg_not_for_sale");

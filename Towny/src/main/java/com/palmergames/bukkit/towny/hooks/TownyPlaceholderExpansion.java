@@ -1,15 +1,18 @@
 package com.palmergames.bukkit.towny.hooks;
 
 import com.palmergames.bukkit.towny.object.TownBlock;
+import com.palmergames.bukkit.towny.object.TownyPermission;
 import com.palmergames.bukkit.towny.object.Translation;
 import com.palmergames.bukkit.towny.object.comparators.ComparatorCaches;
 import com.palmergames.bukkit.towny.object.comparators.ComparatorType;
 import com.palmergames.bukkit.towny.object.Translatable;
 import com.palmergames.bukkit.towny.utils.CombatUtil;
 
+import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
 import com.palmergames.util.Pair;
 import com.palmergames.util.TimeMgmt;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -818,7 +821,21 @@ public class TownyPlaceholderExpansion extends PlaceholderExpansion implements R
 			case "player_location_plotgroup_name": // %townyadvanced_player_location_plotgroup_name%
 				return townblock != null ? (townblock.hasPlotObjectGroup() ? townblock.getPlotObjectGroup().getName() : "") : "";
 			case "player_location_plot_owner_name": // %townyadvanced_player_location_plot_owner_name%
-				return (townblock != null && townblock.hasResident()) ? townblock.getResidentOrNull().getName() : ""; 
+				return (townblock != null && townblock.hasResident()) ? townblock.getResidentOrNull().getName() : "";
+			case "player_location_allowed_build": // %townyadvanced_player_location_allowed_build%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.BUILD) ? "true" : "false";
+			case "player_location_allowed_destroy": // %townyadvanced_player_location_allowed_destroy%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.DESTROY) ? "true" : "false";
+			case "player_location_allowed_itemuse": // %townyadvanced_player_location_allowed_itemuse%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.ITEM_USE) ? "true" : "false";
+			case "player_location_allowed_switch": // %townyadvanced_player_location_allowed_switch%
+				return PlayerCacheUtil.getCachePermission(player, player.getLocation(), Material.STONE, TownyPermission.ActionType.SWITCH) ? "true" : "false";
+			case "player_location_mobs": // %townyadvanced_player_location_mobs%
+				return townblock != null ? (townblock.getPermissions().mobs ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).hasWildernessMobs() ? "true" : "false");
+			case "player_location_explosion": // %townyadvanced_player_location_mobs%
+				return townblock != null ? (townblock.getPermissions().explosion ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).isExpl() ? "true" : "false");
+			case "player_location_firespread": // %townyadvanced_player_location_mobs%
+				return townblock != null ? (townblock.getPermissions().fire ? "true" : "false") : (TownyAPI.getInstance().getTownyWorld(player.getWorld()).isFire() ? "true" : "false");
 			case "player_location_town_prefix": // %townyadvanced_player_location_town_prefix%
 				return townblock != null ? townblock.getTownOrNull().getPrefix(): "";
 			case "player_location_town_postfix": // %townyadvanced_player_location_town_postfix%
